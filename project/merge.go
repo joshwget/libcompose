@@ -38,6 +38,11 @@ func Merge(p *Project, bytes []byte) (map[string]*ServiceConfig, error) {
 		logrus.Fatalf("Could not parse config for project %s : %v", p.Name, err)
 	}
 
+	err = Interpolate(&datas)
+	if err != nil {
+		return nil, err
+	}
+
 	for name, data := range datas {
 		data, err := parse(p.context.ConfigLookup, p.File, data, datas)
 		if err != nil {

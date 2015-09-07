@@ -31,6 +31,32 @@ func (s *RunSuite) TestHelloWorld(c *C) {
 	c.Assert(cn.Name, Equals, "/"+name)
 }
 
+func (s *RunSuite) TestInterpolation(c *C) {
+	os.Setenv("IMAGE", "tianon/true")
+
+	p := s.CreateProjectFromText(c, `
+	reference:
+	  image: $IMAGE
+	`)
+
+	name := fmt.Sprintf("%s_%s_1", p, "reference")
+	referenceContainer := s.GetContainerByName(c, name)
+
+	p = s.CreateProjectFromText(c, `
+	test:
+	  image: tianon/true
+	`)
+
+	name = fmt.Sprintf("%s_%s_1", p, "test")
+	testContainer := s.GetContainerByName(c, name)
+
+	c.Assert(testContainer, NotNil)
+
+	c.Assert(referenceContainer.Image, Equals, testContainer.Image)
+
+	os.Unsetenv("IMAGE")
+}
+
 func (s *RunSuite) TestUp(c *C) {
 	p := s.ProjectFromText(c, "up", SimpleTemplate)
 
