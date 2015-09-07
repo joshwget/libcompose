@@ -62,8 +62,6 @@ func parseInterpolationExpression(line string, pos int, mapping func(string) str
 	default:
 		return "", 0, false
 	}
-
-	return "", pos, true
 }
 
 func parseLine(line string, mapping func(string) string) (string, bool) {
