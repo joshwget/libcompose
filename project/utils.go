@@ -23,7 +23,7 @@ func DefaultDependentServices(p *Project, s Service) []ServiceRelationship {
 		result = append(result, NewServiceRelationship(volumesFrom, RelTypeVolumesFrom))
 	}
 
-	result = appendNs(p, result, s.Config().Net, RelTypeNetNamespace)
+	result = appendNs(p, result, s.Config().NetworkMode, RelTypeNetNamespace)
 	result = appendNs(p, result, s.Config().Ipc, RelTypeIpcNamespace)
 
 	return result

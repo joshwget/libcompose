@@ -14,7 +14,7 @@ func (n *NullLookup) ResolvePath(path, inFile string) string {
 }
 
 func TestExtendsInheritImage(t *testing.T) {
-	config, err := MergeServices(NewConfigs(), nil, &NullLookup{}, "", []byte(`
+	config, _, _, err := Merge(NewConfigs(), nil, &NullLookup{}, "", []byte(`
 parent:
   image: foo
 child:
@@ -33,7 +33,7 @@ child:
 		t.Fatal("Invalid image", parent.Image)
 	}
 
-	if child.Build != "" {
+	if child.Build.Context != "" {
 		t.Fatal("Invalid build", child.Build)
 	}
 
@@ -43,7 +43,7 @@ child:
 }
 
 func TestExtendsInheritBuild(t *testing.T) {
-	config, err := MergeServices(NewConfigs(), nil, &NullLookup{}, "", []byte(`
+	config, _, _, err := Merge(NewConfigs(), nil, &NullLookup{}, "", []byte(`
 parent:
   build: .
 child:
@@ -58,11 +58,11 @@ child:
 	parent := config["parent"]
 	child := config["child"]
 
-	if parent.Build != "." {
+	if parent.Build.Context != "." {
 		t.Fatal("Invalid build", parent.Build)
 	}
 
-	if child.Build != "." {
+	if child.Build.Context != "." {
 		t.Fatal("Invalid build", child.Build)
 	}
 
@@ -72,7 +72,7 @@ child:
 }
 
 func TestExtendBuildOverImage(t *testing.T) {
-	config, err := MergeServices(NewConfigs(), nil, &NullLookup{}, "", []byte(`
+	config, _, _, err := Merge(NewConfigs(), nil, &NullLookup{}, "", []byte(`
 parent:
   image: foo
 child:
@@ -92,7 +92,7 @@ child:
 		t.Fatal("Invalid image", parent.Image)
 	}
 
-	if child.Build != "." {
+	if child.Build.Context != "." {
 		t.Fatal("Invalid build", child.Build)
 	}
 
@@ -102,7 +102,7 @@ child:
 }
 
 func TestExtendImageOverBuild(t *testing.T) {
-	config, err := MergeServices(NewConfigs(), nil, &NullLookup{}, "", []byte(`
+	config, _, _, err := Merge(NewConfigs(), nil, &NullLookup{}, "", []byte(`
 parent:
   build: .
 child:
@@ -122,11 +122,11 @@ child:
 		t.Fatal("Invalid image", parent.Image)
 	}
 
-	if parent.Build != "." {
+	if parent.Build.Context != "." {
 		t.Fatal("Invalid build", parent.Build)
 	}
 
-	if child.Build != "" {
+	if child.Build.Context != "" {
 		t.Fatal("Invalid build", child.Build)
 	}
 
@@ -136,7 +136,7 @@ child:
 }
 
 func TestRestartNo(t *testing.T) {
-	config, err := MergeServices(NewConfigs(), nil, &NullLookup{}, "", []byte(`
+	config, _, _, err := Merge(NewConfigs(), nil, &NullLookup{}, "", []byte(`
 test:
   restart: "no"
   image: foo
@@ -154,7 +154,7 @@ test:
 }
 
 func TestRestartAlways(t *testing.T) {
-	config, err := MergeServices(NewConfigs(), nil, &NullLookup{}, "", []byte(`
+	config, _, _, err := Merge(NewConfigs(), nil, &NullLookup{}, "", []byte(`
 test:
   restart: always
   image: foo

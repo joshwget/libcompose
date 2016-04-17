@@ -181,10 +181,11 @@ func Convert(c *config.ServiceConfig, ctx project.Context) (*container.Config, *
 		DNS:         utils.CopySlice(c.DNS),
 		DNSSearch:   utils.CopySlice(c.DNSSearch),
 		LogConfig: container.LogConfig{
-			Type:   c.LogDriver,
-			Config: utils.CopyMap(c.LogOpt),
+			Type: c.Logging.Driver,
+			// TODO
+			//Config: strslice.StrSlice(utils.CopyMap(c.Logging.Options)),
 		},
-		NetworkMode:    container.NetworkMode(c.Net),
+		NetworkMode:    container.NetworkMode(c.NetworkMode),
 		ReadonlyRootfs: c.ReadOnly,
 		PidMode:        container.PidMode(c.Pid),
 		UTSMode:        container.UTSMode(c.Uts),

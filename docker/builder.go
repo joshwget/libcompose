@@ -47,7 +47,7 @@ func NewDaemonBuilder(ctx *Context) *DaemonBuilder {
 // Build implements Builder. It consumes the docker build API endpoint and sends
 // a tar of the specified service build context.
 func (d *DaemonBuilder) Build(imageName string, p *project.Project, service project.Service) error {
-	if service.Config().Build == "" {
+	if service.Config().Build.Context == "" {
 		return fmt.Errorf("Specified service does not have a build section")
 	}
 
@@ -75,7 +75,7 @@ func (d *DaemonBuilder) Build(imageName string, p *project.Project, service proj
 		Tags:        []string{imageName},
 		NoCache:     d.context.NoCache,
 		Remove:      true,
-		Dockerfile:  service.Config().Dockerfile,
+		Dockerfile:  service.Config().Build.Dockerfile,
 		AuthConfigs: d.context.ConfigFile.AuthConfigs,
 	})
 
@@ -98,8 +98,8 @@ func CreateTar(p *project.Project, name string) (io.ReadCloser, error) {
 	// This code was ripped off from docker/api/client/build.go
 	serviceConfig, _ := p.Configs.Get(name)
 
-	root := serviceConfig.Build
-	dockerfileName := filepath.Join(root, serviceConfig.Dockerfile)
+	root := serviceConfig.Build.Context
+	dockerfileName := filepath.Join(root, serviceConfig.Build.Dockerfile)
 
 	absRoot, err := filepath.Abs(root)
 	if err != nil {

@@ -106,7 +106,7 @@ func (s *Service) ensureImageExists() (string, error) {
 		return "", err
 	}
 
-	if s.Config().Build != "" {
+	if s.Config().Build.Context != "" {
 		if s.context.NoBuild {
 			return "", fmt.Errorf("Service %q needs to be built, but no-build was specified", s.name)
 		}

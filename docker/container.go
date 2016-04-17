@@ -614,7 +614,7 @@ func (c *Container) addIpc(config *container.HostConfig, service project.Service
 
 func (c *Container) addNetNs(config *container.HostConfig, service project.Service, containers []project.Container) (*container.HostConfig, error) {
 	if len(containers) == 0 {
-		return nil, fmt.Errorf("Failed to find container for networks ns %v", c.service.Config().Net)
+		return nil, fmt.Errorf("Failed to find container for networks ns %v", c.service.Config().NetworkMode)
 	}
 
 	id, err := containers[0].ID()

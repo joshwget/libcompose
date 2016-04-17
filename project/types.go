@@ -191,6 +191,8 @@ type Info []InfoPart
 type Project struct {
 	Name           string
 	Configs        *config.Configs
+	VolumeConfigs  map[string]*config.VolumeConfig
+	NetworkConfigs map[string]*config.NetworkConfig
 	Files          []string
 	ReloadCallback func() error
 	context        *Context
