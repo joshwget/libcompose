@@ -1,4 +1,3 @@
-# This file describes the standard way to build libcompose, using docker
 FROM golang:1.6.2
 
 
