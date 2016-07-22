@@ -31,6 +31,7 @@ type Project struct {
 
 	runtime       RuntimeProject
 	networks      Networks
+	volumes       Volumes
 	configVersion string
 	context       *Context
 	reload        []string
@@ -249,6 +250,15 @@ func (p *Project) load(file string, bytes []byte) error {
 		p.networks = networks
 	}
 
+	if p.context.VolumesFactory != nil {
+		volumes, err := p.context.VolumesFactory.Create(p.VolumeConfigs, p.ServiceConfigs, p.isVolumeEnabled())
+		if err != nil {
+			return err
+		}
+
+		p.volumes = volumes
+	}
+
 	return nil
 }
 
@@ -262,7 +272,9 @@ func (p *Project) initialize(ctx context.Context) error {
 	if err := p.networks.Initialize(ctx); err != nil {
 		return err
 	}
-	// TODO Initialize volumes
+	if err := p.volumes.Initialize(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -308,6 +320,10 @@ func (p *Project) Stop(ctx context.Context, timeout int, services ...string) err
 	}), nil)
 }
 
+func (p *Project) isVolumeEnabled() bool {
+	return p.configVersion == "2"
+}
+
 // Down stops the specified services and clean related containers (like docker stop + docker rm).
 func (p *Project) Down(ctx context.Context, opts options.Down, services ...string) error {
 	if !opts.RemoveImages.Valid() {
@@ -333,6 +349,16 @@ func (p *Project) Down(ctx context.Context, opts options.Down, services ...strin
 	}
 	if err := networks.Remove(ctx); err != nil {
 		return err
+	}
+
+	if opts.RemoveVolume {
+		volumes, err := p.context.VolumesFactory.Create(p.VolumeConfigs, p.ServiceConfigs, p.isVolumeEnabled())
+		if err != nil {
+			return err
+		}
+		if err := volumes.Remove(ctx); err != nil {
+			return err
+		}
 	}
 
 	return p.forEach([]string{}, wrapperAction(func(wrapper *serviceWrapper, wrappers map[string]*serviceWrapper) {

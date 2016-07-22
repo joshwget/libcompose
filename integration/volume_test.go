@@ -75,3 +75,22 @@ func (s *CliSuite) TestNamedVolume(c *C) {
 	c.Assert(cn.Mounts[0].Name, DeepEquals, "vol")
 	c.Assert(cn.Mounts[0].Destination, DeepEquals, "/path")
 }
+
+func (s *CliSuite) TestV2Volume(c *C) {
+	_ = s.ProjectFromText(c, "up", `
+	services:
+		with_volume:
+		  image: busybox
+			volumes:
+		  - test:/test
+	volumes:
+	  test: {}
+		test2: {}
+	`)
+
+	v := s.GetVolumeByName(c, "test")
+	c.Assert(v, IsNil)
+
+	v = s.GetVolumeByName(c, "test2")
+	c.Assert(v, IsNil)
+}
