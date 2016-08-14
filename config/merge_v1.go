@@ -31,7 +31,7 @@ func MergeServicesV1(existingServices *ServiceConfigs, environmentLookup Environ
 	}
 
 	if options.Validate {
-		if err := validate(datas); err != nil {
+		if err := Validate(datas); err != nil {
 			return nil, err
 		}
 	}
@@ -137,7 +137,7 @@ func parseV1(resourceLookup ResourceLookup, environmentLookup EnvironmentLookup,
 		}
 
 		if options.Validate {
-			if err := validate(baseRawServices); err != nil {
+			if err := Validate(baseRawServices); err != nil {
 				return nil, err
 			}
 		}
