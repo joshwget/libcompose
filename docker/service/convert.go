@@ -2,10 +2,12 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"golang.org/x/net/context"
 
+	"github.com/docker/docker/api/types/blkiodev"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/strslice"
@@ -17,7 +19,7 @@ import (
 	composecontainer "github.com/docker/libcompose/docker/container"
 	"github.com/docker/libcompose/project"
 	"github.com/docker/libcompose/utils"
-	// "github.com/docker/libcompose/yaml"
+	"github.com/docker/libcompose/yaml"
 )
 
 // ConfigWrapper wraps Config, HostConfig and NetworkingConfig for a container.
@@ -180,15 +182,59 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 		}
 	}
 
+	blkioWeightDevices := []*blkiodev.WeightDevice{}
+	for _, blkioWeightDevice := range c.BlkioWeightDevice {
+		split := strings.Split(blkioWeightDevice, ":")
+		if len(split) == 2 {
+			weight, err := strconv.ParseUint(split[1], 10, 16)
+			if err != nil {
+				return nil, nil, err
+			}
+			blkioWeightDevices = append(blkioWeightDevices, &blkiodev.WeightDevice{
+				Path:   split[0],
+				Weight: uint16(weight),
+			})
+		}
+	}
+
+	blkioDeviceReadBps, err := getThrottleDevice(c.DeviceReadBps)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	blkioDeviceReadIOps, err := getThrottleDevice(c.DeviceReadIOps)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	blkioDeviceWriteBps, err := getThrottleDevice(c.DeviceWriteBps)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	blkioDeviceWriteIOps, err := getThrottleDevice(c.DeviceWriteIOps)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	resources := container.Resources{
-		CgroupParent: c.CgroupParent,
-		Memory:       int64(c.MemLimit),
-		MemorySwap:   int64(c.MemSwapLimit),
-		CPUShares:    int64(c.CPUShares),
-		CPUQuota:     int64(c.CPUQuota),
-		CpusetCpus:   c.CPUSet,
-		Ulimits:      ulimits,
-		Devices:      deviceMappings,
+		BlkioWeight:          uint16(c.BlkioWeight),
+		BlkioWeightDevice:    blkioWeightDevices,
+		CgroupParent:         c.CgroupParent,
+		Memory:               int64(c.MemLimit),
+		MemoryReservation:    int64(c.MemReservation),
+		MemorySwap:           int64(c.MemSwapLimit),
+		CPUPeriod:            int64(c.CPUPeriod),
+		CPUShares:            int64(c.CPUShares),
+		CPUQuota:             int64(c.CPUQuota),
+		CpusetCpus:           c.CPUSet,
+		Ulimits:              ulimits,
+		Devices:              deviceMappings,
+		OomKillDisable:       &c.OomKillDisable,
+		BlkioDeviceReadBps:   blkioDeviceReadBps,
+		BlkioDeviceReadIOps:  blkioDeviceReadIOps,
+		BlkioDeviceWriteBps:  blkioDeviceWriteBps,
+		BlkioDeviceWriteIOps: blkioDeviceWriteIOps,
 	}
 
 	networkMode := c.NetworkMode
@@ -241,7 +287,9 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 		Privileged:  c.Privileged,
 		Binds:       Filter(vols, isBind),
 		DNS:         utils.CopySlice(c.DNS),
+		DNSOptions:  utils.CopySlice(c.DNSOpts),
 		DNSSearch:   utils.CopySlice(c.DNSSearch),
+		Isolation:   container.Isolation(c.Isolation),
 		LogConfig: container.LogConfig{
 			Type:   c.Logging.Driver,
 			Config: utils.CopyMap(c.Logging.Options),
@@ -264,6 +312,24 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 	}
 
 	return config, hostConfig, nil
+}
+
+func getThrottleDevice(throttleConfig yaml.MaporColonSlice) ([]*blkiodev.ThrottleDevice, error) {
+	var throttleDevice []*blkiodev.ThrottleDevice
+	for _, deviceWriteIOps := range throttleConfig {
+		split := strings.Split(deviceWriteIOps, ":")
+		rate, err := strconv.ParseUint(split[1], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		throttleDevice = append(throttleDevice, &blkiodev.ThrottleDevice{
+			Path: split[0],
+			Rate: rate,
+		})
+	}
+
+	return throttleDevice, nil
 }
 
 func getVolumesFrom(volumesFrom []string, serviceConfigs *config.ServiceConfigs, projectName string) ([]string, error) {
